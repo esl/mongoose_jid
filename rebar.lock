@@ -1,0 +1,10 @@
+{"1.1.0",
+[{<<"p1_utils">>,{pkg,<<"p1_utils">>,<<"1.0.18">>},1},
+ {<<"stringprep">>,
+  {git,"https://github.com/processone/stringprep.git",
+       {ref,"0f0df1b10aac78cbe6088b142d172de43fc387a3"}},
+  0}]}.
+[
+{pkg_hash,[
+ {<<"p1_utils">>, <<"3FE224DE5B2E190D730A3C5DA9D6E8540C96484CF4B4692921D1E28F0C32B01C">>}]}
+].

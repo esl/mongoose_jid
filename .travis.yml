@@ -1,0 +1,18 @@
+language: erlang
+branches:
+    only:
+        - master
+otp_release:
+    - 21.3
+    - 22.0
+install:
+    - make
+    - make test-compile
+    - travis_retry pip install --user codecov
+script:
+    - make test
+    - make dialyzer
+after_success:
+    - make coverage-report
+    - make codecov
+    - codecov
