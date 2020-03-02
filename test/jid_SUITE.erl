@@ -5,7 +5,7 @@
 -include_lib("common_test/include/ct.hrl").
 -include("jid.hrl").
 
--export([all/0, groups/0]).
+-export([all/0, groups/0, init_per_suite/1, end_per_suite/1]).
 
 -export([
          binary_to_jid_succeeds_with_valid_binaries/1,
@@ -76,6 +76,13 @@ groups() ->
                                    with_nif_to_binary
                                   ]}
     ].
+
+init_per_suite(C) ->
+    {ok, _} = application:ensure_all_started(jid),
+    C.
+
+end_per_suite(C) ->
+    C.
 
 binary_to_jid_succeeds_with_valid_binaries(_C) ->
     Prop = ?FORALL(BinJid, (jid_gen:jid()),

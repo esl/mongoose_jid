@@ -34,7 +34,7 @@
 -export([replace_resource/2]).
 -export([binary_to_bare/1]).
 
--include("jid.hrl").
+-include_lib("jid/include/jid.hrl").
 
 -type user()      :: binary().
 -type server()    :: binary().
@@ -229,6 +229,7 @@ binary_to_bare(JID) when is_binary(JID) ->
 %%%===================================================================
 %%% Load NIF
 %%%===================================================================
+
 -spec load() -> any().
 load() ->
     PrivDir = case code:priv_dir(?MODULE) of
@@ -239,5 +240,4 @@ load() ->
                   Path ->
                       Path
               end,
-    erlang:load_nif(filename:join(PrivDir, ?MODULE_STRING), none),
-    stringprep:start().
+    erlang:load_nif(filename:join(PrivDir, ?MODULE_STRING), none).
