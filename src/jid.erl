@@ -178,8 +178,7 @@ resourceprep(S) when size(S) < ?SANE_LIMIT ->
 resourceprep(_) ->
     error.
 
--spec to_lower(simple_jid()) -> simple_jid() | error;
-              (jid()) -> jid().
+-spec to_lower(simple_jid() | jid()) -> error | simple_jid().
 to_lower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
 to_lower({U, S, R}) ->
