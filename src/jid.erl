@@ -33,6 +33,7 @@
 -export([to_bare/1]).
 -export([replace_resource/2]).
 -export([binary_to_bare/1]).
+-export([str_tolower/1]).
 
 -include_lib("jid/include/jid.hrl").
 
@@ -225,6 +226,9 @@ binary_to_bare(JID) when is_binary(JID) ->
             to_bare(Result)
     end.
 
+-spec str_tolower(iodata()) -> binary() | error.
+str_tolower(Val) when is_binary(Val); is_list(Val) ->
+    stringprep:tolower(Val).
 
 %%%===================================================================
 %%% Load NIF
