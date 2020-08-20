@@ -18,16 +18,13 @@ test-compile: rebar3 test-deps
 	./rebar3 compile
 
 test: test-compile
-	./rebar3 eunit
+	./rebar3 ct
 
-coverage-report: _build/test/cover/eunit.coverdata
-	./rebar3 as test coveralls send
-
-codecov: _build/test/cover/eunit.coverdata
+codecov: _build/test/cover/ct.coverdata
 	./rebar3 as test codecov analyze
 
 rebar3:
-	wget https://github.com/erlang/rebar3/releases/download/3.13.1/rebar3 &&\
+	wget https://github.com/erlang/rebar3/releases/download/3.13.2/rebar3 &&\
 	chmod u+x rebar3
 
 dialyzer: rebar3
