@@ -19,6 +19,5 @@ script:
     - make dialyzer
 
 after_success:
-    - make coverage-report
     - make codecov
     - codecov
