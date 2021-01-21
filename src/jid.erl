@@ -23,6 +23,7 @@
 -export([are_equal/2]).
 -export([are_bare_equal/2]).
 -export([from_binary/1]).
+-export([from_binary_noprep/1]).
 -export([to_binary/1]).
 -export([is_nodename/1]).
 -export([nodeprep/1]).
@@ -32,6 +33,7 @@
 -export([to_lus/1]).
 -export([to_bare/1]).
 -export([replace_resource/2]).
+-export([replace_resource_noprep/2]).
 -export([binary_to_bare/1]).
 -export([str_tolower/1]).
 
@@ -133,6 +135,17 @@ from_binary(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
 from_binary(_) ->
     error.
 
+-spec from_binary_noprep(binary()) -> jid() | error.
+from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
+    case from_binary_nif(J) of
+        {U, S, R} ->
+            #jid{user = U, server = S, resource = R,
+                 luser = U, lserver = S, lresource = R};
+        error -> error
+    end;
+from_binary_noprep(_) ->
+    error.
+
 %% Original Erlang equivalent can be found in test/jid_SUITE.erl,
 %% together with `proper` generators to check for equivalence
 -spec from_binary_nif(binary()) -> simple_jid() | error.
@@ -215,6 +228,10 @@ replace_resource(#jid{} = JID, Resource) ->
         LResource ->
             JID#jid{resource = Resource, lresource = LResource}
     end.
+
+-spec replace_resource_noprep(jid(), resource()) -> jid() | error.
+replace_resource_noprep(#jid{} = JID, LResource) ->
+    JID#jid{resource = LResource, lresource = LResource}.
 
 -spec binary_to_bare(binary()) -> jid() | error.
 binary_to_bare(JID) when is_binary(JID) ->
