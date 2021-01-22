@@ -1,0 +1,31 @@
+name: CI
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  test:
+    name: OTP ${{matrix.otp}}
+    strategy:
+      matrix:
+        otp: ['23.2', '22.3.4.9', '21.3.8.9']
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ErlGang/setup-erlang@v1.0.0
+        with:
+          otp-version: ${{ matrix.otp }}
+      - run: make
+      - run: make test-compile
+      - run: pip install --user codecov
+      - run: echo "/home/runner/.local/bin" >> $GITHUB_PATH
+      - run: make test
+      - run: make dialyzer
+      - run: make codecov
+      - run: codecov
