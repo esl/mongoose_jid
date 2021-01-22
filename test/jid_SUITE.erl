@@ -11,12 +11,15 @@
          binary_to_jid_succeeds_with_valid_binaries/1,
          binary_to_jid_fails_with_invalid_binaries/1,
          binary_to_jid_fails_with_empty_binary/1,
+         binary_noprep_to_jid_succeeds_with_valid_binaries/1,
+         binary_noprep_to_jid_fails_with_empty_binary/1,
          make_jid_fails_on_binaries_that_are_too_long/1,
          make_is_independent_of_the_input_format/1,
          make_noprep_and_make_have_equal_raw_jid/1,
          make_noprep_is_independent_of_the_input_format/1,
          jid_to_lower_fails_if_any_binary_is_invalid/1,
          jid_replace_resource_failes_for_invalid_resource/1,
+         jid_replace_resource_noprep_failes_for_invalid_resource/1,
          nodeprep_fails_with_too_long_username/1,
          nameprep_fails_with_too_long_domain/1,
          resourceprep_fails_with_too_long_resource/1,
@@ -50,12 +53,15 @@ groups() ->
                            binary_to_jid_succeeds_with_valid_binaries,
                            binary_to_jid_fails_with_invalid_binaries,
                            binary_to_jid_fails_with_empty_binary,
+                           binary_noprep_to_jid_succeeds_with_valid_binaries,
+                           binary_noprep_to_jid_fails_with_empty_binary,
                            make_jid_fails_on_binaries_that_are_too_long,
                            make_is_independent_of_the_input_format,
                            make_noprep_and_make_have_equal_raw_jid,
                            make_noprep_is_independent_of_the_input_format,
                            jid_to_lower_fails_if_any_binary_is_invalid,
                            jid_replace_resource_failes_for_invalid_resource,
+                           jid_replace_resource_noprep_failes_for_invalid_resource,
                            nodeprep_fails_with_too_long_username,
                            nameprep_fails_with_too_long_domain,
                            resourceprep_fails_with_too_long_resource,
@@ -96,6 +102,14 @@ binary_to_jid_fails_with_invalid_binaries(_C) ->
     run_property(Prop, 200, 1, 100).
 
 binary_to_jid_fails_with_empty_binary(_) ->
+    error = jid:from_binary(<<>>).
+
+binary_noprep_to_jid_succeeds_with_valid_binaries(_) ->
+    Prop = ?FORALL(BinJid, (jid_gen:jid()),
+                   (is_record(jid:from_binary_noprep(BinJid), jid))),
+    run_property(Prop, 200, 1, 100).
+
+binary_noprep_to_jid_fails_with_empty_binary(_) ->
     error = jid:from_binary(<<>>).
 
 make_jid_fails_on_binaries_that_are_too_long(_) ->
@@ -175,6 +189,17 @@ jid_replace_resource_failes_for_invalid_resource(_) ->
                    {jid_gen:bare_jid(), jid_gen:maybe_valid_resource()},
                    jid_replace_resource(BinJid, MaybeCorrectRes)),
     run_property(Prop, 100, 1, 42).
+
+jid_replace_resource_noprep_failes_for_invalid_resource(_) ->
+    Prop = ?FORALL({BinJid, MaybeCorrectRes},
+                   {jid_gen:bare_jid(), jid_gen:resource()},
+                   jid_replace_resource_noprep(BinJid, MaybeCorrectRes)),
+    run_property(Prop, 100, 1, 42).
+
+jid_replace_resource_noprep(BinJid, Res) ->
+    Jid = jid:from_binary(BinJid),
+    Jid2 = jid:replace_resource_noprep(Jid, Res),
+    check_jid_replace_resource_output(Res, Jid2).
 
 jid_replace_resource(BinJid, Res) ->
     Jid = jid:from_binary(BinJid),
