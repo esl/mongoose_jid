@@ -33,7 +33,8 @@
          compare_bare_with_jids_structs_and_bare_jids/1,
          binary_to_bare_equals_binary_and_then_bare/1,
          to_lower_to_bare_equals_to_bare_to_lower/1,
-         make_to_lus_equals_to_lower_to_lus/1
+         make_to_lus_equals_to_lower_to_lus/1,
+         make_bare_like_make_with_empty_resource/1
         ]).
 
 -export([
@@ -75,7 +76,8 @@ groups() ->
                            compare_bare_with_jids_structs_and_bare_jids,
                            binary_to_bare_equals_binary_and_then_bare,
                            to_lower_to_bare_equals_to_bare_to_lower,
-                           make_to_lus_equals_to_lower_to_lus
+                           make_to_lus_equals_to_lower_to_lus,
+                           make_bare_like_make_with_empty_resource
                           ]},
      {old_comparison, [parallel], [
                                    with_nif_from_binary,
@@ -292,6 +294,12 @@ make_to_lus_equals_to_lower_to_lus(_) ->
                           jid:to_lus(jid:to_lower({U, S, R})))),
     run_property(Prop, 200, 1, 100).
 
+make_bare_like_make_with_empty_resource(_) ->
+    Prop = ?FORALL({U, S}, {jid_gen:maybe_valid_username(),
+                            jid_gen:maybe_valid_domain()},
+                   equals(jid:make_bare(U, S),
+                          jid:make(U, S, <<>>))),
+    run_property(Prop, 200, 1, 100).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

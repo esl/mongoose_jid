@@ -18,6 +18,7 @@
 
 -export([make/3]).
 -export([make/1]).
+-export([make_bare/2]).
 -export([make_noprep/3]).
 -export([make_noprep/1]).
 -export([are_equal/2]).
@@ -89,6 +90,20 @@ make(User, Server, Res) ->
 -spec make(simple_jid()) ->  jid() | error.
 make({User, Server, Resource}) ->
     make(User, Server, Resource).
+
+-spec make_bare(User :: user(), Server :: server()) -> jid() | error.
+make_bare(User, Server) ->
+    case {nodeprep(User), nameprep(Server)} of
+        {error, _} -> error;
+        {_, error} -> error;
+        {LUser, LServer} ->
+            #jid{user = User,
+                 server = Server,
+                 resource = <<>>,
+                 luser = LUser,
+                 lserver = LServer,
+                 lresource = <<>>}
+    end.
 
 -spec make_noprep(User     :: luser(),
                   Server   :: lserver(),
