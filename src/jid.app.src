@@ -1,6 +1,6 @@
 {application, jid,
- [{description, "An OTP library"},
-  {vsn, "1.0.0"},
+ [{description, "MongooseIM's XMPP jid modules"},
+  {vsn, git},
   {registered, []},
   {applications,
    [kernel,
@@ -9,7 +9,9 @@
    ]},
   {env,[]},
   {modules, []},
-
+  {maintainers, ["ESL"]},
+  {pkg_name, "mongoose_jid"},
   {licenses, ["Apache 2.0"]},
-  {links, []}
+  {links, [{"GitHub", "https://github.com/esl/mongoose_jid/"}]},
+  {exclude_files, ["c_src/mongoose_jid.d"]}
  ]}.
