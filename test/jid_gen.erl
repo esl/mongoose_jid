@@ -23,15 +23,14 @@
 
 jid_struct() ->
     ?LET({U, S, R}, {username(), domain(), resource()},
-         {jid, U, S, R, U, S, R}).
+         {jid, U, S, R}).
 
 from_jid() ->
     oneof([
             {jid_gen:username(), jid_gen:domain(), jid_gen:resource()},
             {<<>>, jid_gen:domain(), jid_gen:resource()},
             {jid_gen:username(), jid_gen:domain()},
-            {jid, jid_gen:username(), jid_gen:domain(), jid_gen:resource(),
-                  jid_gen:username(), jid_gen:domain(), jid_gen:resource()}
+            {jid, jid_gen:username(), jid_gen:domain(), jid_gen:resource()}
           ]).
 
 jid() ->

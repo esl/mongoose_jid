@@ -75,10 +75,7 @@ make(User, Server, Res) ->
         {_, error, _} -> error;
         {_, _, error} -> error;
         {LUser, LServer, LRes} ->
-            #jid{user = User,
-                 server = Server,
-                 resource = Res,
-                 luser = LUser,
+            #jid{luser = LUser,
                  lserver = LServer,
                  lresource = LRes}
     end.
@@ -95,10 +92,7 @@ make_bare(User, Server) ->
         {error, _} -> error;
         {_, error} -> error;
         {LUser, LServer} ->
-            #jid{user = User,
-                 server = Server,
-                 resource = <<>>,
-                 luser = LUser,
+            #jid{luser = LUser,
                  lserver = LServer,
                  lresource = <<>>}
     end.
@@ -108,10 +102,7 @@ make_bare(User, Server) ->
                   Server   :: lserver(),
                   Resource :: lresource()) -> jid().
 make_noprep(LUser, LServer, LResource) ->
-    #jid{user = LUser,
-         server = LServer,
-         resource = LResource,
-         luser = LUser,
+    #jid{luser = LUser,
          lserver = LServer,
          lresource = LResource}.
 
@@ -157,8 +148,7 @@ from_binary(_) ->
 from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
     case from_binary_nif(J) of
         {U, S, R} ->
-            #jid{user = U, server = S, resource = R,
-                 luser = U, lserver = S, lresource = R};
+            #jid{luser = U, lserver = S, lresource = R};
         error -> error
     end;
 from_binary_noprep(_) ->
@@ -185,8 +175,8 @@ to_binary({<<>>, Server}) ->
     <<Server/binary>>;
 to_binary({Node, Server}) ->
     <<Node/binary, "@", Server/binary>>;
-to_binary(#jid{user = User, server = Server, resource = Resource}) ->
-    to_binary({User, Server, Resource});
+to_binary(#jid{luser = LUser, lserver = LServer, lresource = LResource}) ->
+    to_binary({LUser, LServer, LResource});
 to_binary(Jid) when is_binary(Jid) ->
     Jid.
 
@@ -256,7 +246,7 @@ to_lus(error) ->
              (jid()) -> jid();
              (error) -> error.
 to_bare(#jid{} = JID) ->
-    JID#jid{resource = <<>>, lresource = <<>>};
+    JID#jid{lresource = <<>>};
 to_bare({U, S, _R}) ->
     {U, S, <<>>};
 to_bare(error) ->
@@ -268,13 +258,13 @@ replace_resource(#jid{} = JID, Resource) ->
     case resourceprep(Resource) of
         error -> error;
         LResource ->
-            JID#jid{resource = Resource, lresource = LResource}
+            JID#jid{lresource = LResource}
     end.
 
 %% @doc Replaces the resource part of a jid with a new resource, but without normalisation
 -spec replace_resource_noprep(jid(), resource()) -> jid().
 replace_resource_noprep(#jid{} = JID, LResource) ->
-    JID#jid{resource = LResource, lresource = LResource}.
+    JID#jid{lresource = LResource}.
 
 %% @equiv jid:to_bare(jid:from_binary(BinaryJid))
 -spec binary_to_bare(binary()) -> jid() | error.
