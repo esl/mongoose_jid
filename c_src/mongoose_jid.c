@@ -17,8 +17,9 @@ from_binary_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
     }
 
+    const ERL_NIF_TERM arg = argv[0];
     ErlNifBinary bin;
-    if (!enif_inspect_binary(env, argv[0], &bin)) {
+    if (!enif_inspect_binary(env, arg, &bin)) {
         return enif_make_badarg(env);
     }
 
@@ -48,27 +49,17 @@ end_loop:
         return mk_error(env);
     }
 
-    unsigned host_size = slash - commercial_at - 1;
+    size_t host_size = slash - commercial_at - 1;
     if (host_size == 0) return mk_error(env);
-    ERL_NIF_TERM host;
-    unsigned char *host_data = enif_make_new_binary(env, host_size, &host);
-    memcpy(host_data, &(bin.data[commercial_at + 1]), host_size);
+    ERL_NIF_TERM host = enif_make_sub_binary(env, arg, commercial_at + 1, host_size);
 
-    ERL_NIF_TERM resource;
-    unsigned res_size = slash >= size - 1 ? 0 : size - slash - 1;
-    unsigned char *res_data = enif_make_new_binary(env, res_size, &resource);
-    memcpy(res_data, &(bin.data[slash + 1]), res_size);
+    size_t res_size = slash >= size - 1 ? 0 : size - slash - 1;
+    ERL_NIF_TERM resource = enif_make_sub_binary(env, arg, slash + 1, res_size);
 
-    ERL_NIF_TERM user;
-    unsigned user_size = commercial_at == -1 ? 0 : commercial_at;
-    unsigned char *user_data = enif_make_new_binary(env, user_size, &user);
-    memcpy(user_data, &(bin.data[0]), user_size);
+    size_t user_size = commercial_at == (unsigned)-1 ? 0 : commercial_at;
+    ERL_NIF_TERM user = enif_make_sub_binary(env, arg, 0, user_size);
 
-    return enif_make_tuple3(
-            env,
-            user,
-            host,
-            resource);
+    return enif_make_tuple3(env, user, host, resource);
 }
 
 static ErlNifFunc jid_nif_funcs[] = {
