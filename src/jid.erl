@@ -167,11 +167,23 @@ from_binary_noprep(_) ->
 from_binary_nif(_) ->
     erlang:nif_error(not_loaded).
 
-%% Original Erlang equivalent can be found in test/jid_SUITE.erl,
-%% together with `proper` generators to check for equivalence
--spec to_binary(simple_jid() | simple_bare_jid() | jid()) -> binary().
-to_binary(_) ->
-    erlang:nif_error(not_loaded).
+-spec to_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary().
+to_binary({<<>>, Server, <<>>}) ->
+    Server;
+to_binary({Node, Server, <<>>}) ->
+    <<Node/binary, "@", Server/binary>>;
+to_binary({<<>>, Server, Resource}) ->
+    <<Server/binary, "/", Resource/binary>>;
+to_binary({User, Server, Resource}) ->
+    <<User/binary, "@", Server/binary, "/", Resource/binary>>;
+to_binary({<<>>, Server}) ->
+    <<Server/binary>>;
+to_binary({Node, Server}) ->
+    <<Node/binary, "@", Server/binary>>;
+to_binary(#jid{user = User, server = Server, resource = Resource}) ->
+    to_binary({User, Server, Resource});
+to_binary(Jid) when is_binary(Jid) ->
+    Jid.
 
 -spec is_nodename(<<>> | binary()) -> boolean().
 is_nodename(<<>>) ->
