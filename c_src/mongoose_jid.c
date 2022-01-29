@@ -23,7 +23,7 @@ from_binary_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
     }
 
-    const unsigned size = bin.size;
+    const size_t size = bin.size;
     unsigned commercial_at = -1;
     unsigned slash = size;
     for (unsigned i = 0; i < size ; ++i) {
@@ -37,7 +37,7 @@ from_binary_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                 }
                 break;
             case '@':
-                if (commercial_at == -1) {
+                if (commercial_at == (unsigned)-1) {
                     commercial_at = i;
                 } else
                     return mk_error(env);
