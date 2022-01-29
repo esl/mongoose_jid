@@ -1,5 +1,5 @@
 %%==============================================================================
-%% Copyright 2015 Erlang Solutions Ltd.
+%% Copyright 2022 Erlang Solutions Ltd.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
 -export([binary_to_bare/1]).
 -export([str_tolower/1]).
 
--include_lib("jid/include/jid.hrl").
+-include("jid.hrl").
 
 -type user()      :: binary().
 -type server()    :: binary().
@@ -189,30 +189,30 @@ to_binary(Jid) when is_binary(Jid) ->
 is_nodename(<<>>) ->
     false;
 is_nodename(J) ->
-    nodeprep(J) /= error.
+    error =/= nodeprep(J).
 
--spec validate_binary_size(binary()) -> binary() | error.
-validate_binary_size(R) when size(R) < ?SANE_LIMIT ->
+-spec validate_binary_size(binary() | error) -> binary() | error.
+validate_binary_size(R) when is_binary(R), byte_size(R) < ?SANE_LIMIT ->
     R;
 validate_binary_size(_) ->
     error.
 
 -spec nodeprep(user()) -> lserver() | error.
-nodeprep(S) when is_binary(S), size(S) < ?SANE_LIMIT ->
+nodeprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:nodeprep(S),
     validate_binary_size(R);
 nodeprep(_) ->
     error.
 
 -spec nameprep(server()) -> luser() | error.
-nameprep(S) when is_binary(S), size(S) < ?SANE_LIMIT ->
+nameprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:nameprep(S),
     validate_binary_size(R);
 nameprep(_) ->
     error.
 
 -spec resourceprep(resource()) -> lresource() | error.
-resourceprep(S) when size(S) < ?SANE_LIMIT ->
+resourceprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:resourceprep(S),
     validate_binary_size(R);
 resourceprep(_) ->
