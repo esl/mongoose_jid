@@ -1,5 +1,6 @@
 #include "erl_nif.h"
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 
 ERL_NIF_TERM
 mk_error(ErlNifEnv* env)
@@ -30,7 +31,7 @@ from_binary_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                 if (slash == size) {
                     slash = i;
                     goto end_loop;
-                    // If we found a slash first, we don't care about commercial_ats anymore
+                    // If we found a slash, we don't care about commercial_ats anymore
                     // https://tools.ietf.org/html/rfc7622#section-3.2
                 }
                 break;
@@ -51,17 +52,17 @@ end_loop:
     if (host_size == 0) return mk_error(env);
     ERL_NIF_TERM host;
     unsigned char *host_data = enif_make_new_binary(env, host_size, &host);
-    std::memcpy(host_data, &(bin.data[commercial_at + 1]), host_size);
+    memcpy(host_data, &(bin.data[commercial_at + 1]), host_size);
 
     ERL_NIF_TERM resource;
     unsigned res_size = slash >= size - 1 ? 0 : size - slash - 1;
     unsigned char *res_data = enif_make_new_binary(env, res_size, &resource);
-    std::memcpy(res_data, &(bin.data[slash + 1]), res_size);
+    memcpy(res_data, &(bin.data[slash + 1]), res_size);
 
     ERL_NIF_TERM user;
     unsigned user_size = commercial_at == -1 ? 0 : commercial_at;
     unsigned char *user_data = enif_make_new_binary(env, user_size, &user);
-    std::memcpy(user_data, &(bin.data[0]), user_size);
+    memcpy(user_data, &(bin.data[0]), user_size);
 
     return enif_make_tuple3(
             env,
