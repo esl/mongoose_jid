@@ -1,47 +1,11 @@
 -module(jid_SUITE).
+-compile([export_all, nowarn_export_all]).
 
 -include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
--include_lib("common_test/include/ct.hrl").
 -include("jid.hrl").
 
 -export([all/0, groups/0, init_per_suite/1, end_per_suite/1]).
-
--export([
-         binary_to_jid_succeeds_with_valid_binaries/1,
-         binary_to_jid_fails_with_invalid_binaries/1,
-         binary_to_jid_fails_with_empty_binary/1,
-         binary_noprep_to_jid_succeeds_with_valid_binaries/1,
-         binary_noprep_to_jid_fails_with_empty_binary/1,
-         make_jid_fails_on_binaries_that_are_too_long/1,
-         make_is_independent_of_the_input_format/1,
-         make_noprep_and_make_have_equal_raw_jid/1,
-         make_noprep_is_independent_of_the_input_format/1,
-         jid_to_lower_fails_if_any_binary_is_invalid/1,
-         jid_replace_resource_failes_for_invalid_resource/1,
-         jid_replace_resource_noprep_failes_for_invalid_resource/1,
-         nodeprep_fails_with_too_long_username/1,
-         nameprep_fails_with_too_long_domain/1,
-         resourceprep_fails_with_too_long_resource/1,
-         from_binary_fails_with_too_long_input/1,
-         nodeprep_fails_with_incorrect_username/1,
-         resourceprep_fails_with_incorrect_resource/1,
-         nameprep_fails_with_incorrect_domain/1,
-         is_nodename_fails_for_empty_binary/1,
-         compare_bare_jids/1,
-         compare_bare_jids_doesnt_depend_on_the_order/1,
-         compare_bare_with_jids_structs_and_bare_jids/1,
-         binary_to_bare_equals_binary_and_then_bare/1,
-         to_lower_to_bare_equals_to_bare_to_lower/1,
-         make_to_lus_equals_to_lower_to_lus/1,
-         make_bare_like_make_with_empty_resource/1
-        ]).
-
--export([
-         with_nif_to_binary/1,
-         with_nif_from_binary/1
-        ]).
-
 
 all() -> [
           {group, common},
@@ -51,6 +15,7 @@ all() -> [
 groups() ->
     [
      {common, [parallel], [
+                           empty_server_fails,
                            binary_to_jid_succeeds_with_valid_binaries,
                            binary_to_jid_fails_with_invalid_binaries,
                            binary_to_jid_fails_with_empty_binary,
@@ -91,6 +56,10 @@ init_per_suite(C) ->
 
 end_per_suite(C) ->
     C.
+
+
+empty_server_fails(_C) ->
+    ?assertEqual(error, jid:from_binary(<<"$@/">>)).
 
 binary_to_jid_succeeds_with_valid_binaries(_C) ->
     Prop = ?FORALL(BinJid, (jid_gen:jid()),

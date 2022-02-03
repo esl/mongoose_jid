@@ -1,5 +1,5 @@
 %%==============================================================================
-%% Copyright 2015 Erlang Solutions Ltd.
+%% Copyright 2022 Erlang Solutions Ltd.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
 -export([binary_to_bare/1]).
 -export([str_tolower/1]).
 
--include_lib("jid/include/jid.hrl").
+-include("jid.hrl").
 
 -type user()      :: binary().
 -type server()    :: binary().
@@ -49,13 +49,8 @@
 
 -type jid() :: #jid{}.
 -type ljid() :: {luser(), lserver(), lresource()}.
-
-%% A tuple-style JID
 -type simple_jid() :: {user(), server(), resource()}.
-
--type simple_bare_jid() :: {LUser :: luser(), LServer :: lserver()}.
-
-%% A tuple-style JID without resource part
+-type simple_bare_jid() :: {luser(), lserver()}.
 -type literal_jid() :: binary().
 
 -export_type([jid/0,
@@ -72,6 +67,7 @@
 % Maximum JID size in octets (bytes) as defined in
 % https://tools.ietf.org/html/rfc7622#section-3.1
 
+%% @doc Takes the user, server, and resource parts, and returns a jid record or an error.
 -spec make(User :: user(), Server :: server(), Res :: resource()) -> jid() | error.
 make(User, Server, Res) ->
     case {nodeprep(User), nameprep(Server), resourceprep(Res)} of
@@ -87,10 +83,12 @@ make(User, Server, Res) ->
                  lresource = LRes}
     end.
 
+%% @equiv make(User, Server, Resource)
 -spec make(simple_jid()) ->  jid() | error.
 make({User, Server, Resource}) ->
     make(User, Server, Resource).
 
+%% @doc Takes the user and server parts, and returns a jid record with an empty resource, or an error.
 -spec make_bare(User :: user(), Server :: server()) -> jid() | error.
 make_bare(User, Server) ->
     case {nodeprep(User), nameprep(Server)} of
@@ -105,6 +103,7 @@ make_bare(User, Server) ->
                  lresource = <<>>}
     end.
 
+%% @doc Creates a jid record without validating the input. Useful when input is already trusted.
 -spec make_noprep(User     :: luser(),
                   Server   :: lserver(),
                   Resource :: lresource()) -> jid().
@@ -116,10 +115,12 @@ make_noprep(LUser, LServer, LResource) ->
          lserver = LServer,
          lresource = LResource}.
 
+%% @equiv make_noprep(User, Server, Resource)
 -spec make_noprep(simple_jid()) -> jid().
 make_noprep({LUser, LServer, LResource}) ->
     make_noprep(LUser, LServer, LResource).
 
+%% @doc Compares jid structures according to the RFC, i.e., only after normalisation
 -spec are_equal(jid(), jid()) -> boolean().
 are_equal(#jid{luser = LUser, lserver = LServer, lresource = LRes},
           #jid{luser = LUser, lserver = LServer, lresource = LRes}) ->
@@ -141,6 +142,7 @@ are_bare_equal({LUser, LServer, _}, {LUser, LServer, _}) ->
 are_bare_equal(_, _) ->
     false.
 
+%% @doc Parses a binary and returns a jid record or an error
 -spec from_binary(binary()) -> jid() | error.
 from_binary(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
     case from_binary_nif(J) of
@@ -150,6 +152,7 @@ from_binary(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
 from_binary(_) ->
     error.
 
+%% @doc Parses a binary and returns a jid record or an error, but without normalisation of the parts
 -spec from_binary_noprep(binary()) -> jid() | error.
 from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
     case from_binary_nif(J) of
@@ -163,49 +166,70 @@ from_binary_noprep(_) ->
 
 %% Original Erlang equivalent can be found in test/jid_SUITE.erl,
 %% together with `proper` generators to check for equivalence
+%% @private
 -spec from_binary_nif(binary()) -> simple_jid() | error.
 from_binary_nif(_) ->
     erlang:nif_error(not_loaded).
 
-%% Original Erlang equivalent can be found in test/jid_SUITE.erl,
-%% together with `proper` generators to check for equivalence
--spec to_binary(simple_jid() | simple_bare_jid() | jid()) -> binary().
-to_binary(_) ->
-    erlang:nif_error(not_loaded).
+%% @doc Takes a representation of a jid, and outputs such jid as a literal binary
+-spec to_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary().
+to_binary({<<>>, Server, <<>>}) ->
+    Server;
+to_binary({Node, Server, <<>>}) ->
+    <<Node/binary, "@", Server/binary>>;
+to_binary({<<>>, Server, Resource}) ->
+    <<Server/binary, "/", Resource/binary>>;
+to_binary({User, Server, Resource}) ->
+    <<User/binary, "@", Server/binary, "/", Resource/binary>>;
+to_binary({<<>>, Server}) ->
+    <<Server/binary>>;
+to_binary({Node, Server}) ->
+    <<Node/binary, "@", Server/binary>>;
+to_binary(#jid{user = User, server = Server, resource = Resource}) ->
+    to_binary({User, Server, Resource});
+to_binary(Jid) when is_binary(Jid) ->
+    Jid.
 
+%% @doc Returns true if the input is a valid user part
 -spec is_nodename(<<>> | binary()) -> boolean().
 is_nodename(<<>>) ->
     false;
 is_nodename(J) ->
-    nodeprep(J) /= error.
+    error =/= nodeprep(J).
 
--spec validate_binary_size(binary()) -> binary() | error.
-validate_binary_size(R) when size(R) < ?SANE_LIMIT ->
+%% @private
+-spec validate_binary_size(binary()) -> binary() | error;
+                          (error) -> error.
+validate_binary_size(R) when is_binary(R), byte_size(R) < ?SANE_LIMIT ->
     R;
 validate_binary_size(_) ->
     error.
 
--spec nodeprep(user()) -> lserver() | error.
-nodeprep(S) when is_binary(S), size(S) < ?SANE_LIMIT ->
+%% @doc Prepares the user part of a jid
+-spec nodeprep(user()) -> luser() | error.
+nodeprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:nodeprep(S),
     validate_binary_size(R);
 nodeprep(_) ->
     error.
 
--spec nameprep(server()) -> luser() | error.
-nameprep(S) when is_binary(S), size(S) < ?SANE_LIMIT ->
+%% @doc Prepares the server part of a jid
+-spec nameprep(server()) -> lserver() | error.
+nameprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:nameprep(S),
     validate_binary_size(R);
 nameprep(_) ->
     error.
 
+%% @doc Prepares the resource part of a jid
 -spec resourceprep(resource()) -> lresource() | error.
-resourceprep(S) when size(S) < ?SANE_LIMIT ->
+resourceprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:resourceprep(S),
     validate_binary_size(R);
 resourceprep(_) ->
     error.
 
+%% @doc Returns a jid that contains only prepared strings
 -spec to_lower(simple_jid() | jid()) -> error | simple_jid().
 to_lower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
@@ -217,6 +241,7 @@ to_lower({U, S, R}) ->
         error
     end.
 
+%% @doc Takes a jid and returns a prepared bare jid
 -spec to_lus(jid() | ljid()) -> simple_bare_jid();
             (error) -> error.
 to_lus(#jid{luser = U, lserver = S}) ->
@@ -226,6 +251,7 @@ to_lus({U, S, _}) ->
 to_lus(error) ->
     error.
 
+%% @doc Takes a jid and returns the same jid without its resourcepart
 -spec to_bare(simple_jid()) -> simple_jid();
              (jid()) -> jid();
              (error) -> error.
@@ -236,6 +262,7 @@ to_bare({U, S, _R}) ->
 to_bare(error) ->
     error.
 
+%% @doc Replaces the resource part of a jid with a new resource
 -spec replace_resource(jid(), resource()) -> jid() | error.
 replace_resource(#jid{} = JID, Resource) ->
     case resourceprep(Resource) of
@@ -244,10 +271,12 @@ replace_resource(#jid{} = JID, Resource) ->
             JID#jid{resource = Resource, lresource = LResource}
     end.
 
--spec replace_resource_noprep(jid(), resource()) -> jid() | error.
+%% @doc Replaces the resource part of a jid with a new resource, but without normalisation
+-spec replace_resource_noprep(jid(), resource()) -> jid().
 replace_resource_noprep(#jid{} = JID, LResource) ->
     JID#jid{resource = LResource, lresource = LResource}.
 
+%% @equiv jid:to_bare(jid:from_binary(BinaryJid))
 -spec binary_to_bare(binary()) -> jid() | error.
 binary_to_bare(JID) when is_binary(JID) ->
     case from_binary(JID) of
@@ -257,6 +286,7 @@ binary_to_bare(JID) when is_binary(JID) ->
             to_bare(Result)
     end.
 
+%% @doc Lowercases a string using the stringprep algorithm
 -spec str_tolower(iodata()) -> binary() | error.
 str_tolower(Val) when is_binary(Val); is_list(Val) ->
     stringprep:tolower(Val).
@@ -265,7 +295,8 @@ str_tolower(Val) when is_binary(Val); is_list(Val) ->
 %%% Load NIF
 %%%===================================================================
 
--spec load() -> any().
+-dialyzer({nowarn_function, [load/0]}).
+-spec load() -> ok | {error, term()}.
 load() ->
     PrivDir = case code:priv_dir(?MODULE) of
                   {error, _} ->
