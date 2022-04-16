@@ -16,26 +16,13 @@
 -module(jid).
 -on_load(load/0).
 
--export([make/3]).
--export([make/1]).
--export([make_bare/2]).
--export([make_noprep/3]).
--export([make_noprep/1]).
--export([are_equal/2]).
--export([are_bare_equal/2]).
--export([from_binary/1]).
--export([from_binary_noprep/1]).
--export([to_binary/1]).
--export([is_nodename/1]).
--export([nodeprep/1]).
--export([nameprep/1]).
--export([resourceprep/1]).
--export([to_lower/1]).
--export([to_lus/1]).
--export([to_bare/1]).
--export([replace_resource/2]).
--export([replace_resource_noprep/2]).
--export([binary_to_bare/1]).
+-export([make/3, make/1, make_bare/2, make_noprep/3, make_noprep/1]).
+-export([from_binary/1, from_binary_noprep/1]).
+-export([binary_to_bare/1, to_bare_binary/1, to_binary/1]).
+-export([are_equal/2, are_bare_equal/2, is_nodename/1]).
+-export([nodeprep/1, nameprep/1, resourceprep/1]).
+-export([to_lower/1, to_lus/1, to_bare/1]).
+-export([replace_resource/2, replace_resource_noprep/2]).
 -export([str_tolower/1]).
 
 -include("jid.hrl").
@@ -179,6 +166,18 @@ to_binary(#jid{luser = LUser, lserver = LServer, lresource = LResource}) ->
     to_binary({LUser, LServer, LResource});
 to_binary(Jid) when is_binary(Jid) ->
     Jid.
+
+-spec to_bare_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary() | error.
+to_bare_binary({<<>>, Server}) ->
+    <<Server/binary>>;
+to_bare_binary({User, Server}) ->
+    <<User/binary, "@", Server/binary>>;
+to_bare_binary({User, Server, _}) ->
+    to_bare_binary({User, Server});
+to_bare_binary(#jid{luser = LUser, lserver = LServer}) ->
+    to_bare_binary({LUser, LServer});
+to_bare_binary(Jid) when is_binary(Jid) ->
+    binary_to_bare(Jid).
 
 %% @doc Returns true if the input is a valid user part
 -spec is_nodename(<<>> | binary()) -> boolean().

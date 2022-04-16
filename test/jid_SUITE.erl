@@ -39,6 +39,7 @@ groups() ->
                            compare_bare_jids_doesnt_depend_on_the_order,
                            compare_bare_with_jids_structs_and_bare_jids,
                            binary_to_bare_equals_binary_and_then_bare,
+                           to_bare_binary_equals_to_bare_then_to_binary,
                            to_lower_to_bare_equals_to_bare_to_lower,
                            make_to_lus_equals_to_lower_to_lus,
                            make_bare_like_make_with_empty_resource
@@ -231,6 +232,11 @@ compare_bare_jids(_) ->
 binary_to_bare_equals_binary_and_then_bare(_) ->
     Prop = ?FORALL(A, jid_gen:maybe_valid_jid(),
                    equals(jid:to_bare(jid:from_binary(A)), jid:binary_to_bare(A))),
+    run_property(Prop, 200, 1, 100).
+
+to_bare_binary_equals_to_bare_then_to_binary(_) ->
+    Prop = ?FORALL(A, jid_gen:jid_struct(),
+                   equals(jid:to_binary(jid:to_bare(A)), jid:to_bare_binary(A))),
     run_property(Prop, 200, 1, 100).
 
 to_lower_to_bare_equals_to_bare_to_lower(_) ->
