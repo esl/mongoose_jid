@@ -23,7 +23,6 @@ groups() ->
                            binary_noprep_to_jid_fails_with_empty_binary,
                            make_jid_fails_on_binaries_that_are_too_long,
                            make_is_independent_of_the_input_format,
-                           make_noprep_and_make_have_equal_raw_jid,
                            make_noprep_is_independent_of_the_input_format,
                            jid_to_lower_fails_if_any_binary_is_invalid,
                            jid_replace_resource_failes_for_invalid_resource,
@@ -40,6 +39,7 @@ groups() ->
                            compare_bare_jids_doesnt_depend_on_the_order,
                            compare_bare_with_jids_structs_and_bare_jids,
                            binary_to_bare_equals_binary_and_then_bare,
+                           to_bare_binary_equals_to_bare_then_to_binary,
                            to_lower_to_bare_equals_to_bare_to_lower,
                            make_to_lus_equals_to_lower_to_lus,
                            make_bare_like_make_with_empty_resource
@@ -97,18 +97,6 @@ make_is_independent_of_the_input_format(_) ->
                    {jid_gen:username(), jid_gen:domain(), jid_gen:resource()},
                    jid:make(U,S,R) == jid:make({U,S,R})),
     run_property(Prop, 100, 1, 500).
-
-make_noprep_and_make_have_equal_raw_jid(_) ->
-    Prop = ?FORALL({U, S, R},
-                   {jid_gen:username(), jid_gen:domain(), jid_gen:resource()},
-                   begin
-                       #jid{user = U, server = S, resource = R} = jid:make(U, S, R),
-                       #jid{user = U, server = S, resource = R} = jid:make_noprep(U, S, R),
-                       true
-                   end
-                  ),
-    run_property(Prop, 10, 1, 500).
-
 
 make_noprep_is_independent_of_the_input_format(_) ->
     Prop = ?FORALL({U, S, R},
@@ -246,6 +234,11 @@ binary_to_bare_equals_binary_and_then_bare(_) ->
                    equals(jid:to_bare(jid:from_binary(A)), jid:binary_to_bare(A))),
     run_property(Prop, 200, 1, 100).
 
+to_bare_binary_equals_to_bare_then_to_binary(_) ->
+    Prop = ?FORALL(A, jid_gen:jid_struct(),
+                   equals(jid:to_binary(jid:to_bare(A)), jid:to_bare_binary(A))),
+    run_property(Prop, 200, 1, 100).
+
 to_lower_to_bare_equals_to_bare_to_lower(_) ->
     Prop = ?FORALL(JID, oneof([jid_gen:jid_struct(),
                                      {jid_gen:maybe_valid_username(),
@@ -330,7 +323,7 @@ binary_to_jid3(<<>>, N, S, R) ->
 to_binary(Jid) when is_binary(Jid) ->
     % sometimes it is used to format error messages
     Jid;
-to_binary(#jid{user = User, server = Server, resource = Resource}) ->
+to_binary(#jid{luser = User, lserver = Server, lresource = Resource}) ->
     to_binary({User, Server, Resource});
 to_binary({User, Server}) ->
     to_binary({User, Server, <<>>});
