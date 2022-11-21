@@ -43,6 +43,9 @@ groups() ->
                            to_lower_to_bare_equals_to_bare_to_lower,
                            make_to_lus_equals_to_lower_to_lus,
                            make_bare_like_make_with_empty_resource,
+                           make_empty_domain,
+                           make_bare_empty_domain,
+                           make_noprep_empty_domain,
                            getters_equal_struct_lookup
                           ]},
      {old_comparison, [parallel], [
@@ -264,6 +267,19 @@ make_bare_like_make_with_empty_resource(_) ->
                           jid:make(U, S, <<>>))),
     run_property(Prop, 200, 1, 100).
 
+make_empty_domain(_) ->
+    ?assertEqual(error, jid:make(jid_gen:username(), <<>>, jid_gen:resource())),
+    ?assertEqual(error, jid:make({jid_gen:username(), <<>>, jid_gen:resource()})).
+
+make_bare_empty_domain(_) ->
+    ?assertEqual(error, jid:make_bare(jid_gen:username(), <<>>)).
+
+make_noprep_empty_domain(_) ->
+    Prop = ?FORALL({U, S, R},
+                   {jid_gen:username(), <<>>, jid_gen:resource()},
+                    jid:make_noprep(U, S, R) == jid:make_noprep({U, S, R})),
+    run_property(Prop, 10, 1, 500).
+
 getters_equal_struct_lookup(_) ->
     Jid = jid:from_binary(<<"alice@localhost/res1">>),
     ?assertEqual(jid:luser(Jid), Jid#jid.luser),
@@ -277,7 +293,6 @@ getters_equal_struct_lookup(_) ->
     ?assertEqual(jid:luser(US), Jid#jid.luser),
     ?assertEqual(jid:lserver(US), Jid#jid.lserver),
     ?assertEqual(jid:lresource(US), <<>>).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Original code kept for documentation purposes
