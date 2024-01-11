@@ -1,18 +1,3 @@
-%%==============================================================================
-%% Copyright 2022 Erlang Solutions Ltd.
-%%
-%% Licensed under the Apache License, Version 2.0 (the "License");
-%% you may not use this file except in compliance with the License.
-%% You may obtain a copy of the License at
-%%
-%% http://www.apache.org/licenses/LICENSE-2.0
-%%
-%% Unless required by applicable law or agreed to in writing, software
-%% distributed under the License is distributed on an "AS IS" BASIS,
-%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-%% See the License for the specific language governing permissions and
-%% limitations under the License.
-%%==============================================================================
 -module(jid).
 -on_load(load/0).
 
@@ -21,6 +6,7 @@
 -export([binary_to_bare/1, to_bare_binary/1, to_binary/1]).
 -export([are_equal/2, are_bare_equal/2, is_nodename/1]).
 -export([nodeprep/1, nameprep/1, resourceprep/1]).
+-export([luser/1, lserver/1, lresource/1]).
 -export([to_lower/1, to_lus/1, to_bare/1]).
 -export([replace_resource/2, replace_resource_noprep/2]).
 -export([str_tolower/1]).
@@ -167,7 +153,7 @@ to_binary(#jid{luser = LUser, lserver = LServer, lresource = LResource}) ->
 to_binary(Jid) when is_binary(Jid) ->
     Jid.
 
--spec to_bare_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary() | error.
+-spec to_bare_binary(ljid() | simple_bare_jid() | jid() | literal_jid()) -> binary() | error.
 to_bare_binary({<<>>, Server}) ->
     <<Server/binary>>;
 to_bare_binary({User, Server}) ->
@@ -202,6 +188,30 @@ nodeprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
 nodeprep(_) ->
     error.
 
+-spec luser(jid() | ljid() | simple_bare_jid()) -> luser().
+luser(#jid{luser = LUser}) ->
+    LUser;
+luser({LUser, _, _}) ->
+    LUser;
+luser({LUser, _}) ->
+    LUser.
+
+-spec lserver(jid() | ljid() | simple_bare_jid()) -> lserver().
+lserver(#jid{lserver = LServer}) ->
+    LServer;
+lserver({_, LServer, _}) ->
+    LServer;
+lserver({_, LServer}) ->
+    LServer.
+
+-spec lresource(jid() | ljid() | simple_bare_jid()) -> lresource().
+lresource(#jid{lresource = LResource}) ->
+    LResource;
+lresource({_, _, LResource}) ->
+    LResource;
+lresource({_, _}) ->
+    <<>>.
+
 %% @doc Prepares the server part of a jid
 -spec nameprep(server()) -> lserver() | error.
 nameprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
@@ -219,7 +229,7 @@ resourceprep(_) ->
     error.
 
 %% @doc Returns a jid that contains only prepared strings
--spec to_lower(simple_jid() | jid()) -> error | simple_jid().
+-spec to_lower(simple_jid() | jid()) -> error | ljid().
 to_lower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
 to_lower({U, S, R}) ->
@@ -241,8 +251,8 @@ to_lus(error) ->
     error.
 
 %% @doc Takes a jid and returns the same jid without its resourcepart
--spec to_bare(simple_jid()) -> simple_jid();
-             (jid()) -> jid();
+-spec to_bare(jid()) -> jid();
+             (ljid()) -> ljid();
              (error) -> error.
 to_bare(#jid{} = JID) ->
     JID#jid{lresource = <<>>};

@@ -11,30 +11,31 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   test:
-    name: OTP ${{matrix.otp}}
+    name: OTP ${{matrix.otp_vsn}}
     strategy:
       matrix:
-        otp: ['24.2', '23.3']
-    runs-on: 'ubuntu-20.04'
+        otp_vsn: ['26.2', '25.3', '24.3']
+        rebar_vsn: ['3.22.0']
+    runs-on: 'ubuntu-22.04'
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{ matrix.otp }}
-          rebar3-version: '3.18.0'
+          otp-version: ${{ matrix.otp_vsn }}
+          rebar3-version: ${{ matrix.rebar_vsn }}
       - run: rebar3 as test compile
       - run: rebar3 ct
       - run: rebar3 ex_doc
-        if: ${{ matrix.otp == '24.2' }}
+        if: ${{ matrix.otp == '26.2' }}
       - run: rebar3 dialyzer
-        if: ${{ matrix.otp == '24.2' }}
-      - run: pip install --user codecov
-        if: ${{ matrix.otp == '24.2' }}
+        if: ${{ matrix.otp == '26.2' }}
       - run: rebar3 as test codecov analyze
-        if: ${{ matrix.otp == '24.2' }}
+        if: ${{ matrix.otp == '26.2' }}
       - run: gcov -o c_src mongoose_jid
-        if: ${{ matrix.otp == '24.2' }}
-      - run: /home/runner/.local/bin/codecov
-        if: ${{ matrix.otp == '24.2' }}
+        if: ${{ matrix.otp == '26.2' }}
+      - run: rebar3 as test codecov analyze
+      - uses: codecov/codecov-action@v3
+        with:
+          name: Upload coverage reports to Codecov
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
