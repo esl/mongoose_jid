@@ -42,7 +42,8 @@ groups() ->
                            to_bare_binary_equals_to_bare_then_to_binary,
                            to_lower_to_bare_equals_to_bare_to_lower,
                            make_to_lus_equals_to_lower_to_lus,
-                           make_bare_like_make_with_empty_resource
+                           make_bare_like_make_with_empty_resource,
+                           getters_equal_struct_lookup
                           ]},
      {old_comparison, [parallel], [
                                    with_nif_from_binary,
@@ -262,6 +263,20 @@ make_bare_like_make_with_empty_resource(_) ->
                    equals(jid:make_bare(U, S),
                           jid:make(U, S, <<>>))),
     run_property(Prop, 200, 1, 100).
+
+getters_equal_struct_lookup(_) ->
+    Jid = jid:from_binary(<<"alice@localhost/res1">>),
+    ?assertEqual(jid:luser(Jid), Jid#jid.luser),
+    ?assertEqual(jid:lserver(Jid), Jid#jid.lserver),
+    ?assertEqual(jid:lresource(Jid), Jid#jid.lresource),
+    LJid = jid:to_lower(Jid),
+    ?assertEqual(jid:luser(LJid), Jid#jid.luser),
+    ?assertEqual(jid:lserver(LJid), Jid#jid.lserver),
+    ?assertEqual(jid:lresource(LJid), Jid#jid.lresource),
+    US = jid:to_lus(Jid),
+    ?assertEqual(jid:luser(US), Jid#jid.luser),
+    ?assertEqual(jid:lserver(US), Jid#jid.lserver),
+    ?assertEqual(jid:lresource(US), <<>>).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
