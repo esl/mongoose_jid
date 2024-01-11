@@ -214,6 +214,8 @@ lresource({_, _}) ->
 
 %% @doc Prepares the server part of a jid
 -spec nameprep(server()) -> lserver() | error.
+nameprep(<<>>) ->
+    error;
 nameprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
     R = stringprep:nameprep(S),
     validate_binary_size(R);
