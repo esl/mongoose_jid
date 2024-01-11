@@ -153,7 +153,7 @@ to_binary(#jid{luser = LUser, lserver = LServer, lresource = LResource}) ->
 to_binary(Jid) when is_binary(Jid) ->
     Jid.
 
--spec to_bare_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary() | error.
+-spec to_bare_binary(ljid() | simple_bare_jid() | jid() | literal_jid()) -> binary() | error.
 to_bare_binary({<<>>, Server}) ->
     <<Server/binary>>;
 to_bare_binary({User, Server}) ->
@@ -229,7 +229,7 @@ resourceprep(_) ->
     error.
 
 %% @doc Returns a jid that contains only prepared strings
--spec to_lower(simple_jid() | jid()) -> error | simple_jid().
+-spec to_lower(simple_jid() | jid()) -> error | ljid().
 to_lower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
 to_lower({U, S, R}) ->
@@ -251,8 +251,8 @@ to_lus(error) ->
     error.
 
 %% @doc Takes a jid and returns the same jid without its resourcepart
--spec to_bare(simple_jid()) -> simple_jid();
-             (jid()) -> jid();
+-spec to_bare(jid()) -> jid();
+             (ljid()) -> ljid();
              (error) -> error.
 to_bare(#jid{} = JID) ->
     JID#jid{lresource = <<>>};
