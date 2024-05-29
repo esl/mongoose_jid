@@ -107,50 +107,52 @@ are_bare_equal(_, _) ->
 
 %% @doc Parses a binary and returns a jid record or an error
 -spec from_binary(binary()) -> jid() | error.
-from_binary(J) ->
-    binary_to_jid1(J, []).
+from_binary(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
+    case binary_to_jid1(J, J, 0) of
+        {U, H, R} -> make(U, H, R);
+        error -> error
+    end;
+from_binary(_) ->
+    error.
 
--spec binary_to_jid1(binary(), [byte()]) -> error | jid:jid().
-binary_to_jid1(<<$@, _J/binary>>, []) ->
+binary_to_jid1(_, <<$@, _J/binary>>, 0) ->
     error;
-binary_to_jid1(<<$@, J/binary>>, N) ->
-    binary_to_jid2(J, lists:reverse(N), []);
-binary_to_jid1(<<$/, _J/binary>>, []) ->
+binary_to_jid1(Jid, <<$@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N, 0);
+binary_to_jid1(_, <<$/, _J/binary>>, 0) ->
     error;
-binary_to_jid1(<<$/, J/binary>>, N) ->
-    binary_to_jid3(J, [], lists:reverse(N), []);
-binary_to_jid1(<<C, J/binary>>, N) ->
-    binary_to_jid1(J, [C | N]);
-binary_to_jid1(<<>>, []) ->
+binary_to_jid1(Jid, <<$/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, byte_size(Jid) - N - 1})};
+binary_to_jid1(Jid, <<_C, J/binary>>, N) ->
+    binary_to_jid1(Jid, J, N + 1);
+binary_to_jid1(_, <<>>, 0) ->
     error;
-binary_to_jid1(<<>>, N) ->
-    make_bare(<<>>, list_to_binary(lists:reverse(N))).
+binary_to_jid1(J, <<>>, _) ->
+    {<<>>, J, <<>>}.
 
--spec binary_to_jid2(binary(), [byte()], [byte()]) -> error | jid:jid().
-binary_to_jid2(<<$@, _J/binary>>, _N, _S) ->
+binary_to_jid2(_, <<$@, _J/binary>>, _N, _S) ->
     error;
-binary_to_jid2(<<$/, _J/binary>>, _N, []) ->
+binary_to_jid2(_, <<$/, _J/binary>>, _N, 0) ->
     error;
-binary_to_jid2(<<$/, J/binary>>, N, S) ->
-    binary_to_jid3(J, N, lists:reverse(S), []);
-binary_to_jid2(<<C, J/binary>>, N, S) ->
-    binary_to_jid2(J, N, [C | S]);
-binary_to_jid2(<<>>, _N, []) ->
+binary_to_jid2(Jid, <<$/, _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S}),
+     erlang:binary_part(Jid, {N + S + 2, byte_size(Jid) - N - S - 2})};
+binary_to_jid2(Jid, <<_C, J/binary>>, N, S) ->
+    binary_to_jid2(Jid, J, N, S + 1);
+binary_to_jid2(_, <<>>, _N, 0) ->
     error;
-binary_to_jid2(<<>>, N, S) ->
-    make_bare(list_to_binary(N), list_to_binary(lists:reverse(S))).
-
--spec binary_to_jid3(binary(), [byte()], [byte()], [byte()]) -> error | jid:jid().
-binary_to_jid3(<<C, J/binary>>, N, S, R) ->
-    binary_to_jid3(J, N, S, [C | R]);
-binary_to_jid3(<<>>, N, S, R) ->
-    make(list_to_binary(N), list_to_binary(S), list_to_binary(lists:reverse(R))).
-
+binary_to_jid2(Jid, <<>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S}),
+     <<>>}.
 
 %% @doc Parses a binary and returns a jid record or an error, but without normalisation of the parts
 -spec from_binary_noprep(binary()) -> jid() | error.
 from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
-    case binary_to_jid1(J, []) of
+    case binary_to_jid1(J, J, 0) of
         {U, S, R} ->
             #jid{luser = U, lserver = S, lresource = R};
         error -> error
