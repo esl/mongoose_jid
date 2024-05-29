@@ -1,5 +1,4 @@
 -module(jid).
--on_load(load/0).
 
 -export([make/3, make/1, make_bare/2, make_noprep/3, make_noprep/1]).
 -export([from_binary/1, from_binary_noprep/1]).
@@ -108,31 +107,56 @@ are_bare_equal(_, _) ->
 
 %% @doc Parses a binary and returns a jid record or an error
 -spec from_binary(binary()) -> jid() | error.
-from_binary(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
-    case from_binary_nif(J) of
-        {U, H, R} -> make(U, H, R);
-        error -> error
-    end;
-from_binary(_) ->
-    error.
+from_binary(J) ->
+    binary_to_jid1(J, []).
+
+-spec binary_to_jid1(binary(), [byte()]) -> error | jid:jid().
+binary_to_jid1(<<$@, _J/binary>>, []) ->
+    error;
+binary_to_jid1(<<$@, J/binary>>, N) ->
+    binary_to_jid2(J, lists:reverse(N), []);
+binary_to_jid1(<<$/, _J/binary>>, []) ->
+    error;
+binary_to_jid1(<<$/, J/binary>>, N) ->
+    binary_to_jid3(J, [], lists:reverse(N), []);
+binary_to_jid1(<<C, J/binary>>, N) ->
+    binary_to_jid1(J, [C | N]);
+binary_to_jid1(<<>>, []) ->
+    error;
+binary_to_jid1(<<>>, N) ->
+    make_bare(<<>>, list_to_binary(lists:reverse(N))).
+
+-spec binary_to_jid2(binary(), [byte()], [byte()]) -> error | jid:jid().
+binary_to_jid2(<<$@, _J/binary>>, _N, _S) ->
+    error;
+binary_to_jid2(<<$/, _J/binary>>, _N, []) ->
+    error;
+binary_to_jid2(<<$/, J/binary>>, N, S) ->
+    binary_to_jid3(J, N, lists:reverse(S), []);
+binary_to_jid2(<<C, J/binary>>, N, S) ->
+    binary_to_jid2(J, N, [C | S]);
+binary_to_jid2(<<>>, _N, []) ->
+    error;
+binary_to_jid2(<<>>, N, S) ->
+    make_bare(list_to_binary(N), list_to_binary(lists:reverse(S))).
+
+-spec binary_to_jid3(binary(), [byte()], [byte()], [byte()]) -> error | jid:jid().
+binary_to_jid3(<<C, J/binary>>, N, S, R) ->
+    binary_to_jid3(J, N, S, [C | R]);
+binary_to_jid3(<<>>, N, S, R) ->
+    make(list_to_binary(N), list_to_binary(S), list_to_binary(lists:reverse(R))).
+
 
 %% @doc Parses a binary and returns a jid record or an error, but without normalisation of the parts
 -spec from_binary_noprep(binary()) -> jid() | error.
 from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
-    case from_binary_nif(J) of
+    case binary_to_jid1(J, []) of
         {U, S, R} ->
             #jid{luser = U, lserver = S, lresource = R};
         error -> error
     end;
 from_binary_noprep(_) ->
     error.
-
-%% Original Erlang equivalent can be found in test/jid_SUITE.erl,
-%% together with `proper` generators to check for equivalence
-%% @private
--spec from_binary_nif(binary()) -> simple_jid() | error.
-from_binary_nif(_) ->
-    erlang:nif_error(not_loaded).
 
 %% @doc Takes a representation of a jid, and outputs such jid as a literal binary
 -spec to_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary().
@@ -291,20 +315,3 @@ binary_to_bare(JID) when is_binary(JID) ->
 -spec str_tolower(iodata()) -> binary() | error.
 str_tolower(Val) when is_binary(Val); is_list(Val) ->
     stringprep:tolower(Val).
-
-%%%===================================================================
-%%% Load NIF
-%%%===================================================================
-
--dialyzer({nowarn_function, [load/0]}).
--spec load() -> ok | {error, term()}.
-load() ->
-    PrivDir = case code:priv_dir(?MODULE) of
-                  {error, _} ->
-                      EbinDir = filename:dirname(code:which(?MODULE)),
-                      AppPath = filename:dirname(EbinDir),
-                      filename:join(AppPath, "priv");
-                  Path ->
-                      Path
-              end,
-    erlang:load_nif(filename:join(PrivDir, ?MODULE_STRING), none).
