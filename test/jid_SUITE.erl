@@ -8,50 +8,46 @@
 -export([all/0, groups/0, init_per_suite/1, end_per_suite/1]).
 
 all() -> [
-          {group, common},
-          {group, old_comparison}
+          {group, common}
          ].
 
 groups() ->
     [
-     {common, [parallel], [
-                           empty_server_fails,
-                           binary_to_jid_succeeds_with_valid_binaries,
-                           binary_to_jid_fails_with_invalid_binaries,
-                           binary_to_jid_fails_with_empty_binary,
-                           binary_noprep_to_jid_succeeds_with_valid_binaries,
-                           binary_noprep_to_jid_fails_with_empty_binary,
-                           make_jid_fails_on_binaries_that_are_too_long,
-                           make_is_independent_of_the_input_format,
-                           make_noprep_is_independent_of_the_input_format,
-                           jid_to_lower_fails_if_any_binary_is_invalid,
-                           jid_replace_resource_failes_for_invalid_resource,
-                           jid_replace_resource_noprep_failes_for_invalid_resource,
-                           nodeprep_fails_with_too_long_username,
-                           nameprep_fails_with_too_long_domain,
-                           resourceprep_fails_with_too_long_resource,
-                           from_binary_fails_with_too_long_input,
-                           nodeprep_fails_with_incorrect_username,
-                           resourceprep_fails_with_incorrect_resource,
-                           nameprep_fails_with_incorrect_domain,
-                           is_nodename_fails_for_empty_binary,
-                           compare_bare_jids,
-                           compare_bare_jids_doesnt_depend_on_the_order,
-                           compare_bare_with_jids_structs_and_bare_jids,
-                           binary_to_bare_equals_binary_and_then_bare,
-                           to_bare_binary_equals_to_bare_then_to_binary,
-                           to_lower_to_bare_equals_to_bare_to_lower,
-                           make_to_lus_equals_to_lower_to_lus,
-                           make_bare_like_make_with_empty_resource,
-                           make_empty_domain,
-                           make_bare_empty_domain,
-                           make_noprep_empty_domain,
-                           getters_equal_struct_lookup
-                          ]},
-     {old_comparison, [parallel], [
-                                   with_nif_from_binary,
-                                   with_nif_to_binary
-                                  ]}
+     {common, [parallel],
+      [
+       empty_server_fails,
+       binary_to_jid_succeeds_with_valid_binaries,
+       binary_to_jid_fails_with_invalid_binaries,
+       binary_to_jid_fails_with_empty_binary,
+       binary_noprep_to_jid_succeeds_with_valid_binaries,
+       binary_noprep_to_jid_fails_with_empty_binary,
+       make_jid_fails_on_binaries_that_are_too_long,
+       make_is_independent_of_the_input_format,
+       make_noprep_is_independent_of_the_input_format,
+       jid_to_lower_fails_if_any_binary_is_invalid,
+       jid_replace_resource_failes_for_invalid_resource,
+       jid_replace_resource_noprep_failes_for_invalid_resource,
+       nodeprep_fails_with_too_long_username,
+       nameprep_fails_with_too_long_domain,
+       resourceprep_fails_with_too_long_resource,
+       from_binary_fails_with_too_long_input,
+       nodeprep_fails_with_incorrect_username,
+       resourceprep_fails_with_incorrect_resource,
+       nameprep_fails_with_incorrect_domain,
+       is_nodename_fails_for_empty_binary,
+       compare_bare_jids,
+       compare_bare_jids_doesnt_depend_on_the_order,
+       compare_bare_with_jids_structs_and_bare_jids,
+       binary_to_bare_equals_binary_and_then_bare,
+       to_bare_binary_equals_to_bare_then_to_binary,
+       to_lower_to_bare_equals_to_bare_to_lower,
+       make_to_lus_equals_to_lower_to_lus,
+       make_bare_like_make_with_empty_resource,
+       make_empty_domain,
+       make_bare_empty_domain,
+       make_noprep_empty_domain,
+       getters_equal_struct_lookup
+      ]}
     ].
 
 init_per_suite(C) ->
@@ -294,89 +290,11 @@ getters_equal_struct_lookup(_) ->
     ?assertEqual(jid:lserver(US), Jid#jid.lserver),
     ?assertEqual(jid:lresource(US), <<>>).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Original code kept for documentation purposes
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-with_nif_to_binary(_C) ->
-    Prop = ?FORALL(L, jid_gen:jid(), from_binary(L) =:= jid:from_binary(L)),
-    run_property(Prop, 100, 1, 42).
-
-with_nif_from_binary(_C) ->
-    Prop = ?FORALL(L, jid_gen:from_jid(), to_binary(L) =:= jid:to_binary(L)),
-    run_property(Prop, 100, 1, 42).
-
-% Some property based testing to check for equivalence
-% Original code
--spec from_binary(binary()) ->  error | jid:jid().
-from_binary(J) ->
-    binary_to_jid1(J, []).
-
--spec binary_to_jid1(binary(), [byte()]) -> 'error' | jid:jid().
-binary_to_jid1(<<$@, _J/binary>>, []) ->
-    error;
-binary_to_jid1(<<$@, J/binary>>, N) ->
-    binary_to_jid2(J, lists:reverse(N), []);
-binary_to_jid1(<<$/, _J/binary>>, []) ->
-    error;
-binary_to_jid1(<<$/, J/binary>>, N) ->
-    binary_to_jid3(J, [], lists:reverse(N), []);
-binary_to_jid1(<<C, J/binary>>, N) ->
-    binary_to_jid1(J, [C | N]);
-binary_to_jid1(<<>>, []) ->
-    error;
-binary_to_jid1(<<>>, N) ->
-    jid:make(<<>>, list_to_binary(lists:reverse(N)), <<>>).
-
-%% @doc Only one "@" is admitted per JID
--spec binary_to_jid2(binary(), [byte()], [byte()]) -> 'error' | jid:jid().
-binary_to_jid2(<<$@, _J/binary>>, _N, _S) ->
-    error;
-binary_to_jid2(<<$/, _J/binary>>, _N, []) ->
-    error;
-binary_to_jid2(<<$/, J/binary>>, N, S) ->
-    binary_to_jid3(J, N, lists:reverse(S), []);
-binary_to_jid2(<<C, J/binary>>, N, S) ->
-    binary_to_jid2(J, N, [C | S]);
-binary_to_jid2(<<>>, _N, []) ->
-    error;
-binary_to_jid2(<<>>, N, S) ->
-    jid:make(list_to_binary(N), list_to_binary(lists:reverse(S)), <<>>).
-
--spec binary_to_jid3(binary(), [byte()], [byte()], [byte()]) -> 'error' | jid:jid().
-binary_to_jid3(<<C, J/binary>>, N, S, R) ->
-    binary_to_jid3(J, N, S, [C | R]);
-binary_to_jid3(<<>>, N, S, R) ->
-    jid:make(list_to_binary(N), list_to_binary(S), list_to_binary(lists:reverse(R))).
-
--spec to_binary(jid:simple_jid() | jid:simple_bare_jid() | jid:jid()) ->  binary().
-to_binary(Jid) when is_binary(Jid) ->
-    % sometimes it is used to format error messages
-    Jid;
-to_binary(#jid{luser = User, lserver = Server, lresource = Resource}) ->
-    to_binary({User, Server, Resource});
-to_binary({User, Server}) ->
-    to_binary({User, Server, <<>>});
-to_binary({Node, Server, Resource}) ->
-    S1 = case Node of
-             <<>> ->
-                 <<>>;
-             _ ->
-                 <<Node/binary, "@">>
-         end,
-    S2 = <<S1/binary, Server/binary>>,
-    S3 = case Resource of
-             <<>> ->
-                 S2;
-             _ ->
-                 <<S2/binary, "/", Resource/binary>>
-         end,
-    S3.
-
-
 %% HELPERS
 run_property(Prop, NumTest, StartSize, StopSize) ->
-    ?assert(proper:quickcheck(Prop, [verbose, long_result,
-                                     {numtests, NumTest},
-                                     {start_size, StartSize},
-                                     {max_size, StopSize}])).
+    Res = proper:quickcheck(Prop, [verbose, long_result,
+                                   {numtests, NumTest},
+                                   {start_size, StartSize},
+                                   {max_size, StopSize}]),
+    ct:pal("Result of the property is ~p~n", [Res]),
+    ?assert(Res).

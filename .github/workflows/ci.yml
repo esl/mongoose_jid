@@ -14,8 +14,8 @@ jobs:
     name: OTP ${{matrix.otp_vsn}}
     strategy:
       matrix:
-        otp_vsn: ['26.2', '25.3', '24.3']
-        rebar_vsn: ['3.22.0']
+        otp_vsn: ['27', '26', '25']
+        rebar_vsn: ['3.23.0']
     runs-on: 'ubuntu-22.04'
     steps:
       - uses: actions/checkout@v4
@@ -26,16 +26,13 @@ jobs:
       - run: rebar3 as test compile
       - run: rebar3 ct
       - run: rebar3 ex_doc
-        if: ${{ matrix.otp == '26.2' }}
+        if: ${{ matrix.otp == '27' }}
       - run: rebar3 dialyzer
-        if: ${{ matrix.otp == '26.2' }}
+        if: ${{ matrix.otp == '27' }}
       - run: rebar3 as test codecov analyze
-        if: ${{ matrix.otp == '26.2' }}
-      - run: gcov -o c_src mongoose_jid
-        if: ${{ matrix.otp == '26.2' }}
+        if: ${{ matrix.otp == '27' }}
       - run: rebar3 as test codecov analyze
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           name: Upload coverage reports to Codecov
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
