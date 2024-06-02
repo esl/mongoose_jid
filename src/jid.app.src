@@ -11,6 +11,6 @@
   {modules, []},
   {maintainers, ["ESL"]},
   {pkg_name, "mongoose_jid"},
-  {licenses, ["Apache 2.0"]},
+  {licenses, ["Apache-2.0"]},
   {links, [{"GitHub", "https://github.com/esl/mongoose_jid/"}]}
  ]}.

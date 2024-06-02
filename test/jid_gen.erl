@@ -1,29 +1,33 @@
 -module(jid_gen).
-
--export([jid_struct/0]).
--export([from_jid/0]).
--export([jid/0]).
--export([bare_jid/0]).
--export([full_jid/0]).
--export([username/0]).
--export([domain/0]).
--export([resource/0]).
--export([maybe_valid_jid/0]).
--export([invalid_jid/0]).
--export([invalid_bare_jid/0]).
--export([invalid_full_jid/0]).
--export([maybe_valid_username/0]).
--export([invalid_username/0]).
--export([maybe_valid_domain/0]).
--export([invalid_domain/0]).
--export([maybe_valid_resource/0]).
--export([invalid_resource/0]).
+-compile([export_all, nowarn_export_all]).
 
 -include_lib("proper/include/proper.hrl").
 
+jid_type() ->
+    oneof([jid_struct(), ljid_struct(), simple_bare_jid_struct()]).
+
 jid_struct() ->
-    ?LET({U, S, R}, {username(), domain(), resource()},
-         {jid, U, S, R}).
+    oneof([
+           ?LET({U, S, R}, {username(), domain(), resource()}, {jid, U, S, R}),
+           ?LET({U, S}, {username(), domain()}, {jid, U, S, <<>>}),
+           ?LET({U, S, R}, {username(), domain(), resource()}, {jid, U, S, R}),
+           ?LET({S, R}, {domain(), resource()}, {jid, <<>>, S, R}),
+           ?LET(S, domain(), {jid, <<>>, S, <<>>})
+          ]).
+
+ljid_struct() ->
+    oneof([
+           ?LET({U, S, R}, {username(), domain(), resource()}, {U, S, R}),
+           ?LET({U, S}, {username(), domain()}, {U, S, <<>>}),
+           ?LET({U, S, R}, {username(), domain(), resource()}, {U, S, R}),
+           ?LET({S, R}, {domain(), resource()}, {<<>>, S, R})
+          ]).
+
+simple_bare_jid_struct() ->
+    oneof([
+           ?LET({U, S}, {username(), domain()}, {U, S}),
+           ?LET(S, domain(), {<<>>, S})
+          ]).
 
 from_jid() ->
     oneof([
@@ -34,7 +38,7 @@ from_jid() ->
           ]).
 
 jid() ->
-    oneof([full_jid(), bare_jid(), domain()]).
+    oneof([full_jid(), bare_jid(), domain(), service()]).
 
 bare_jid() ->
     ?LET({Username, Domain}, {username(), domain()},
@@ -49,6 +53,10 @@ username() ->
 
 domain() ->
     ?SIZED(S, always_correct_xmpp_binary(round(S*1.5))).
+
+service() ->
+    ?LET({Domain, Resource}, {domain(), resource()},
+         <<Domain/binary, $/, Resource/binary>>).
 
 resource() ->
     ?SIZED(S, always_correct_xmpp_binary(round(S*1.7))).

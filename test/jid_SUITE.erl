@@ -16,10 +16,13 @@ groups() ->
      {common, [parallel],
       [
        empty_server_fails,
+       to_binary_with_binary_does_nothing,
+       to_binary_can_convert_all_types_of_jids,
        binary_to_jid_succeeds_with_valid_binaries,
        binary_to_jid_fails_with_invalid_binaries,
        binary_to_jid_fails_with_empty_binary,
        binary_noprep_to_jid_succeeds_with_valid_binaries,
+       binary_noprep_to_jid_fails_with_invalid_binaries,
        binary_noprep_to_jid_fails_with_empty_binary,
        make_jid_fails_on_binaries_that_are_too_long,
        make_is_independent_of_the_input_format,
@@ -40,6 +43,7 @@ groups() ->
        compare_bare_with_jids_structs_and_bare_jids,
        binary_to_bare_equals_binary_and_then_bare,
        to_bare_binary_equals_to_bare_then_to_binary,
+       to_bare_binary_fails_on_invalid_jids,
        to_lower_to_bare_equals_to_bare_to_lower,
        make_to_lus_equals_to_lower_to_lus,
        make_bare_like_make_with_empty_resource,
@@ -61,11 +65,20 @@ end_per_suite(C) ->
 empty_server_fails(_C) ->
     ?assertEqual(error, jid:from_binary(<<"$@/">>)).
 
+to_binary_with_binary_does_nothing(_C) ->
+    Prop = ?FORALL(Bin, binary(),
+                   Bin =:= jid:to_binary(Bin)),
+    run_property(Prop, 50, 1, 100).
+
+to_binary_can_convert_all_types_of_jids(_C) ->
+    Prop = ?FORALL(BinJid, (jid_gen:jid_type()),
+                   is_binary(jid:to_binary(BinJid))),
+    run_property(Prop, 200, 1, 100).
+
 binary_to_jid_succeeds_with_valid_binaries(_C) ->
     Prop = ?FORALL(BinJid, (jid_gen:jid()),
                    (is_record(jid:from_binary(BinJid), jid))),
     run_property(Prop, 200, 1, 100).
-
 
 binary_to_jid_fails_with_invalid_binaries(_C) ->
     Prop = ?FORALL(BinJid, jid_gen:invalid_jid(),
@@ -80,8 +93,13 @@ binary_noprep_to_jid_succeeds_with_valid_binaries(_) ->
                    (is_record(jid:from_binary_noprep(BinJid), jid))),
     run_property(Prop, 200, 1, 100).
 
+binary_noprep_to_jid_fails_with_invalid_binaries(_C) ->
+    Prop = ?FORALL(Bin, jid_gen:jid(),
+                   error == jid:from_binary_noprep(Bin)),
+    run_property(Prop, 5, 3071, 5048).
+
 binary_noprep_to_jid_fails_with_empty_binary(_) ->
-    error = jid:from_binary(<<>>).
+    error = jid:from_binary_noprep(<<>>).
 
 make_jid_fails_on_binaries_that_are_too_long(_) ->
     Prop = ?FORALL({U, S, R},
@@ -235,9 +253,13 @@ binary_to_bare_equals_binary_and_then_bare(_) ->
     run_property(Prop, 200, 1, 100).
 
 to_bare_binary_equals_to_bare_then_to_binary(_) ->
-    Prop = ?FORALL(A, jid_gen:jid_struct(),
+    Prop = ?FORALL(A, jid_gen:jid_type(),
                    equals(jid:to_binary(jid:to_bare(A)), jid:to_bare_binary(A))),
     run_property(Prop, 200, 1, 100).
+
+to_bare_binary_fails_on_invalid_jids(_) ->
+    ?assertEqual(<<"a@a">>, jid:to_bare_binary(<<"a@a/a">>)),
+    ?assertEqual(error, jid:to_bare_binary(<<"aa@/aa">>)).
 
 to_lower_to_bare_equals_to_bare_to_lower(_) ->
     Prop = ?FORALL(JID, oneof([jid_gen:jid_struct(),

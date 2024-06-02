@@ -2,6 +2,7 @@
 
 [![Hex pm](http://img.shields.io/hexpm/v/mongoose_jid.svg?style=flat)](https://hex.pm/packages/mongoose_jid)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/mongoose_jid/)
+[![Codecov](https://codecov.io/gh/esl/mongoose_jid/branch/master/graph/badge.svg)](https://codecov.io/gh/esl/mongoose_jid)
 [![Downloads](https://img.shields.io/hexpm/dt/mongoose_jid.svg)](https://hex.pm/packages/mongoose_jid)
 [![License](https://img.shields.io/hexpm/l/mongoose_jid.svg)](https://github.com/esl/mongoose_jid/blob/master/LICENSE)
 
