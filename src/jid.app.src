@@ -12,6 +12,5 @@
   {maintainers, ["ESL"]},
   {pkg_name, "mongoose_jid"},
   {licenses, ["Apache 2.0"]},
-  {links, [{"GitHub", "https://github.com/esl/mongoose_jid/"}]},
-  {exclude_files, ["c_src/mongoose_jid.d"]}
+  {links, [{"GitHub", "https://github.com/esl/mongoose_jid/"}]}
  ]}.

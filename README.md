@@ -7,4 +7,4 @@
 
 An XMPP library for parsing JIDs, fully compliant with [RFC6122](https://datatracker.ietf.org/doc/html/rfc6122)
 
-It offers functionality for parsing jids and turning them into jid records, normalising their parts or skipping normalisation when the input is trusted, and also to build binaries for the jid representation. It is highly performant, uses NIFs where it's best to, and has a wide API that can be consulted in the documentation.
+It offers functionality for parsing jids and turning them into jid records, normalising their parts or skipping normalisation when the input is trusted, and also to build binaries for the jid representation. It is highly performant and widely documented.
