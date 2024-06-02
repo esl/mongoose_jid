@@ -20,10 +20,15 @@
 -type lresource() :: binary().
 
 -type jid() :: #jid{}.
+%% JID data structure.
 -type ljid() :: {luser(), lserver(), lresource()}.
+%% 3-tuple containing the string-prepped binaries.
 -type simple_jid() :: {user(), server(), resource()}.
+%% 3-tuple containing not-yet string-prepped binaries.
 -type simple_bare_jid() :: {luser(), lserver()}.
+%% 2-tuple containing string-prepped user and server parts.
 -type literal_jid() :: binary().
+%% literal binary containing a bare or full JID, not ensured to be string-prepped.
 
 -export_type([jid/0,
               ljid/0,
@@ -40,9 +45,9 @@
 % https://tools.ietf.org/html/rfc7622#section-3.1
 
 %% @doc Takes the user, server, and resource parts, and returns a jid record or an error.
--spec make(User :: user(), Server :: server(), Res :: resource()) -> jid() | error.
-make(User, Server, Res) ->
-    case {nodeprep(User), nameprep(Server), resourceprep(Res)} of
+-spec make(User :: user(), Server :: server(), Resource :: resource()) -> jid() | error.
+make(User, Server, Resource) ->
+    case {nodeprep(User), nameprep(Server), resourceprep(Resource)} of
         {error, _, _} -> error;
         {_, error, _} -> error;
         {_, _, error} -> error;
@@ -160,7 +165,7 @@ from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
 from_binary_noprep(_) ->
     error.
 
-%% @doc Takes a representation of a jid, and outputs such jid as a literal binary
+%% @doc Takes a representation of a jid, and outputs such jid as a literal binary.
 -spec to_binary(simple_jid() | simple_bare_jid() | jid() | literal_jid()) -> binary().
 to_binary({<<>>, Server, <<>>}) ->
     Server;
@@ -179,17 +184,25 @@ to_binary(#jid{luser = LUser, lserver = LServer, lresource = LResource}) ->
 to_binary(Jid) when is_binary(Jid) ->
     Jid.
 
+%% @doc Takes a representation of a jid, and outputs such jid as a literal binary in bare form.
 -spec to_bare_binary(ljid() | simple_bare_jid() | jid() | literal_jid()) -> binary() | error.
 to_bare_binary({<<>>, Server}) ->
     <<Server/binary>>;
 to_bare_binary({User, Server}) ->
     <<User/binary, "@", Server/binary>>;
+to_bare_binary({<<>>, Server, _}) ->
+    <<Server/binary>>;
 to_bare_binary({User, Server, _}) ->
-    to_bare_binary({User, Server});
+    <<User/binary, "@", Server/binary>>;
+to_bare_binary(#jid{luser = <<>>, lserver = LServer}) ->
+    <<LServer/binary>>;
 to_bare_binary(#jid{luser = LUser, lserver = LServer}) ->
-    to_bare_binary({LUser, LServer});
-to_bare_binary(Jid) when is_binary(Jid) ->
-    binary_to_bare(Jid).
+    <<LUser/binary, "@", LServer/binary>>;
+to_bare_binary(BinJid) when is_binary(BinJid) ->
+    case binary_to_bare(BinJid) of
+        error -> error;
+        Jid -> to_binary(Jid)
+    end.
 
 %% @doc Returns true if the input is a valid user part
 -spec is_nodename(<<>> | binary()) -> boolean().
@@ -214,6 +227,7 @@ nodeprep(S) when is_binary(S), byte_size(S) < ?SANE_LIMIT ->
 nodeprep(_) ->
     error.
 
+%% @doc Extract the string-prepped user part of the jid
 -spec luser(jid() | ljid() | simple_bare_jid()) -> luser().
 luser(#jid{luser = LUser}) ->
     LUser;
@@ -222,6 +236,7 @@ luser({LUser, _, _}) ->
 luser({LUser, _}) ->
     LUser.
 
+%% @doc Extract the string-prepped server part of the jid
 -spec lserver(jid() | ljid() | simple_bare_jid()) -> lserver().
 lserver(#jid{lserver = LServer}) ->
     LServer;
@@ -230,6 +245,7 @@ lserver({_, LServer, _}) ->
 lserver({_, LServer}) ->
     LServer.
 
+%% @doc Extract the string-prepped resource part of the jid
 -spec lresource(jid() | ljid() | simple_bare_jid()) -> lresource().
 lresource(#jid{lresource = LResource}) ->
     LResource;
@@ -269,11 +285,13 @@ to_lower({U, S, R}) ->
     end.
 
 %% @doc Takes a jid and returns a prepared bare jid
--spec to_lus(jid() | ljid()) -> simple_bare_jid();
+-spec to_lus(jid() | ljid() | simple_bare_jid()) -> simple_bare_jid();
             (error) -> error.
 to_lus(#jid{luser = U, lserver = S}) ->
     {U, S};
 to_lus({U, S, _}) ->
+    {U, S};
+to_lus({U, S}) ->
     {U, S};
 to_lus(error) ->
     error.
@@ -281,11 +299,14 @@ to_lus(error) ->
 %% @doc Takes a jid and returns the same jid without its resourcepart
 -spec to_bare(jid()) -> jid();
              (ljid()) -> ljid();
+             (simple_bare_jid()) -> simple_bare_jid();
              (error) -> error.
 to_bare(#jid{} = JID) ->
     JID#jid{lresource = <<>>};
 to_bare({U, S, _R}) ->
     {U, S, <<>>};
+to_bare({U, S}) ->
+    {U, S};
 to_bare(error) ->
     error.
 
