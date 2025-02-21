@@ -50,7 +50,9 @@ groups() ->
        make_empty_domain,
        make_bare_empty_domain,
        make_noprep_empty_domain,
-       getters_equal_struct_lookup
+       getters_equal_struct_lookup,
+       equivalent_good,
+       equivalent_bad
       ]}
     ].
 
@@ -60,7 +62,6 @@ init_per_suite(C) ->
 
 end_per_suite(C) ->
     C.
-
 
 empty_server_fails(_C) ->
     ?assertEqual(error, jid:from_binary(<<"$@/">>)).
@@ -312,6 +313,14 @@ getters_equal_struct_lookup(_) ->
     ?assertEqual(jid:lserver(US), Jid#jid.lserver),
     ?assertEqual(jid:lresource(US), <<>>).
 
+equivalent_good(_C) ->
+    Prop = ?FORALL(Jid, jid_gen:jid(), from_binary(Jid) =:= jid:from_binary(Jid)),
+    run_property(Prop, 500, 1, 100).
+
+equivalent_bad(_C) ->
+    Prop = ?FORALL(Jid, jid_gen:invalid_jid(), from_binary(Jid) =:= jid:from_binary(Jid)),
+    run_property(Prop, 500, 1, 100).
+
 %% HELPERS
 run_property(Prop, NumTest, StartSize, StopSize) ->
     Res = proper:quickcheck(Prop, [verbose, long_result,
@@ -320,3 +329,46 @@ run_property(Prop, NumTest, StartSize, StopSize) ->
                                    {max_size, StopSize}]),
     ct:pal("Result of the property is ~p~n", [Res]),
     ?assert(Res).
+
+%% Original code
+from_binary(J) when is_binary(J), byte_size(J) < 3100 ->
+    case binary_to_jid1(J, J, 0) of
+        {U, H, R} -> jid:make(U, H, R);
+        error -> error
+    end;
+from_binary(_) ->
+    error.
+
+binary_to_jid1(_, <<$@, _J/binary>>, 0) ->
+    error;
+binary_to_jid1(Jid, <<$@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N, 0);
+binary_to_jid1(_, <<$/, _J/binary>>, 0) ->
+    error;
+binary_to_jid1(Jid, <<$/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, byte_size(Jid) - N - 1})};
+binary_to_jid1(Jid, <<_C, J/binary>>, N) ->
+    binary_to_jid1(Jid, J, N + 1);
+binary_to_jid1(_, <<>>, 0) ->
+    error;
+binary_to_jid1(J, <<>>, _) ->
+    {<<>>, J, <<>>}.
+
+binary_to_jid2(_, <<$@, _J/binary>>, _N, _S) ->
+    error;
+binary_to_jid2(_, <<$/, _J/binary>>, _N, 0) ->
+    error;
+binary_to_jid2(Jid, <<$/, _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S}),
+     erlang:binary_part(Jid, {N + S + 2, byte_size(Jid) - N - S - 2})};
+binary_to_jid2(Jid, <<_C, J/binary>>, N, S) ->
+    binary_to_jid2(Jid, J, N, S + 1);
+binary_to_jid2(_, <<>>, _N, 0) ->
+    error;
+binary_to_jid2(Jid, <<>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S}),
+     <<>>}.

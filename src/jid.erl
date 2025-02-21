@@ -120,40 +120,6 @@ from_binary(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
 from_binary(_) ->
     error.
 
-binary_to_jid1(_, <<$@, _J/binary>>, 0) ->
-    error;
-binary_to_jid1(Jid, <<$@, J/binary>>, N) ->
-    binary_to_jid2(Jid, J, N, 0);
-binary_to_jid1(_, <<$/, _J/binary>>, 0) ->
-    error;
-binary_to_jid1(Jid, <<$/, _/binary>>, N) ->
-    {<<>>,
-     erlang:binary_part(Jid, {0, N}),
-     erlang:binary_part(Jid, {N + 1, byte_size(Jid) - N - 1})};
-binary_to_jid1(Jid, <<_C, J/binary>>, N) ->
-    binary_to_jid1(Jid, J, N + 1);
-binary_to_jid1(_, <<>>, 0) ->
-    error;
-binary_to_jid1(J, <<>>, _) ->
-    {<<>>, J, <<>>}.
-
-binary_to_jid2(_, <<$@, _J/binary>>, _N, _S) ->
-    error;
-binary_to_jid2(_, <<$/, _J/binary>>, _N, 0) ->
-    error;
-binary_to_jid2(Jid, <<$/, _/binary>>, N, S) ->
-    {erlang:binary_part(Jid, {0, N}),
-     erlang:binary_part(Jid, {N + 1, S}),
-     erlang:binary_part(Jid, {N + S + 2, byte_size(Jid) - N - S - 2})};
-binary_to_jid2(Jid, <<_C, J/binary>>, N, S) ->
-    binary_to_jid2(Jid, J, N, S + 1);
-binary_to_jid2(_, <<>>, _N, 0) ->
-    error;
-binary_to_jid2(Jid, <<>>, N, S) ->
-    {erlang:binary_part(Jid, {0, N}),
-     erlang:binary_part(Jid, {N + 1, S}),
-     <<>>}.
-
 %% @doc Parses a binary and returns a jid record or an error, but without normalisation of the parts
 -spec from_binary_noprep(binary()) -> jid() | error.
 from_binary_noprep(J) when is_binary(J), byte_size(J) < ?XMPP_JID_SIZE_LIMIT ->
@@ -338,3 +304,116 @@ binary_to_bare(JID) when is_binary(JID) ->
 -spec str_tolower(iodata()) -> binary() | error.
 str_tolower(Val) when is_binary(Val); is_list(Val) ->
     stringprep:tolower(Val).
+
+%%%%% Helpers 
+binary_to_jid1(_, <<>>, 0) ->
+    error;
+binary_to_jid1(J, <<>>, _) ->
+    {<<>>, J, <<>>};
+binary_to_jid1(_, <<$@, _J/binary>>, 0) ->
+    error;
+binary_to_jid1(Jid, <<$@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N, 0);
+binary_to_jid1(Jid, <<_, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 1, 0);
+binary_to_jid1(Jid, <<_, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 2, 0);
+binary_to_jid1(Jid, <<_, _, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 3, 0);
+binary_to_jid1(Jid, <<_, _, _, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 4, 0);
+binary_to_jid1(Jid, <<_, _, _, _, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 5, 0);
+binary_to_jid1(Jid, <<_, _, _, _, _, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 6, 0);
+binary_to_jid1(Jid, <<_, _, _, _, _, _, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 7, 0);
+binary_to_jid1(Jid, <<_, _, _, _, _, _, _, _, $@, J/binary>>, N) ->
+    binary_to_jid2(Jid, J, N + 8, 0);
+binary_to_jid1(_, <<$/, _J/binary>>, 0) ->
+    error;
+binary_to_jid1(Jid, <<$/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, byte_size(Jid) - N - 1})};
+binary_to_jid1(Jid, <<_, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 1}),
+     erlang:binary_part(Jid, {N + 2, byte_size(Jid) - N - 2})};
+binary_to_jid1(Jid, <<_, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 2}),
+     erlang:binary_part(Jid, {N + 3, byte_size(Jid) - N - 3})};
+binary_to_jid1(Jid, <<_, _, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 3}),
+     erlang:binary_part(Jid, {N + 4, byte_size(Jid) - N - 4})};
+binary_to_jid1(Jid, <<_, _, _, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 4}),
+     erlang:binary_part(Jid, {N + 5, byte_size(Jid) - N - 5})};
+binary_to_jid1(Jid, <<_, _, _, _, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 5}),
+     erlang:binary_part(Jid, {N + 6, byte_size(Jid) - N - 6})};
+binary_to_jid1(Jid, <<_, _, _, _, _, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 6}),
+     erlang:binary_part(Jid, {N + 7, byte_size(Jid) - N - 7})};
+binary_to_jid1(Jid, <<_, _, _, _, _, _, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 7}),
+     erlang:binary_part(Jid, {N + 8, byte_size(Jid) - N - 8})};
+binary_to_jid1(Jid, <<_, _, _, _, _, _, _, _, $/, _/binary>>, N) ->
+    {<<>>,
+     erlang:binary_part(Jid, {0, N + 8}),
+     erlang:binary_part(Jid, {N + 9, byte_size(Jid) - N - 9})};
+binary_to_jid1(Jid, <<_, _, _, _, _, _, _, _, J/binary>>, N) ->
+    binary_to_jid1(Jid, J, N + 8);
+binary_to_jid1(Jid, <<_C, J/binary>>, N) ->
+    binary_to_jid1(Jid, J, N + 1).
+
+binary_to_jid2(_, <<>>, _N, 0) ->
+    error;
+binary_to_jid2(Jid, <<>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S}),
+     <<>>};
+binary_to_jid2(_, <<$/, _J/binary>>, _N, 0) ->
+    error;
+binary_to_jid2(Jid, <<$/, _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S}),
+     erlang:binary_part(Jid, {N + S + 2, byte_size(Jid) - N - S - 2})};
+binary_to_jid2(Jid, <<_, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 1}),
+     erlang:binary_part(Jid, {N + S + 3, byte_size(Jid) - N - S - 3})};
+binary_to_jid2(Jid, <<_, _, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 2}),
+     erlang:binary_part(Jid, {N + S + 4, byte_size(Jid) - N - S - 4})};
+binary_to_jid2(Jid, <<_, _, _, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 3}),
+     erlang:binary_part(Jid, {N + S + 5, byte_size(Jid) - N - S - 5})};
+binary_to_jid2(Jid, <<_, _, _, _, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 4}),
+     erlang:binary_part(Jid, {N + S + 6, byte_size(Jid) - N - S - 6})};
+binary_to_jid2(Jid, <<_, _, _, _, _, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 5}),
+     erlang:binary_part(Jid, {N + S + 7, byte_size(Jid) - N - S - 7})};
+binary_to_jid2(Jid, <<_, _, _, _, _, _, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 6}),
+     erlang:binary_part(Jid, {N + S + 8, byte_size(Jid) - N - S - 8})};
+binary_to_jid2(Jid, <<_, _, _, _, _, _, _, "/", _/binary>>, N, S) ->
+    {erlang:binary_part(Jid, {0, N}),
+     erlang:binary_part(Jid, {N + 1, S + 7}),
+     erlang:binary_part(Jid, {N + S + 9, byte_size(Jid) - N - S - 9})};
+binary_to_jid2(Jid, <<_, _, _, _, _, _, _, _, J/binary>>, N, S) ->
+    binary_to_jid2(Jid, J, N, S + 8);
+binary_to_jid2(Jid, <<_C, J/binary>>, N, S) ->
+    binary_to_jid2(Jid, J, N, S + 1).
