@@ -16,6 +16,7 @@ groups() ->
      {common, [parallel],
       [
        empty_server_fails,
+       multiple_at_fails_as_invalid_jid,
        to_binary_with_binary_does_nothing,
        to_binary_can_convert_all_types_of_jids,
        binary_to_jid_succeeds_with_valid_binaries,
@@ -65,6 +66,9 @@ end_per_suite(C) ->
 
 empty_server_fails(_C) ->
     ?assertEqual(error, jid:from_binary(<<"$@/">>)).
+
+multiple_at_fails_as_invalid_jid(_C) ->
+    ?assertEqual(error, jid:from_binary(<<"jids@have@no@feelings">>)).
 
 to_binary_with_binary_does_nothing(_C) ->
     Prop = ?FORALL(Bin, binary(),
