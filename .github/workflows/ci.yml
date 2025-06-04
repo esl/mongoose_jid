@@ -11,28 +11,26 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   test:
-    name: OTP ${{matrix.otp_vsn}}
+    name: OTP ${{matrix.otp}}
     strategy:
       matrix:
-        otp_vsn: ['27', '26', '25']
-        rebar_vsn: ['3.23.0']
-    runs-on: 'ubuntu-22.04'
+        otp: ['28', '27', '26']
+        rebar3: ['3.25.0']
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{ matrix.otp_vsn }}
-          rebar3-version: ${{ matrix.rebar_vsn }}
+          otp-version: ${{ matrix.otp }}
+          rebar3-version: ${{ matrix.rebar3 }}
       - run: rebar3 as test compile
       - run: rebar3 ct
       - run: rebar3 ex_doc
-        if: ${{ matrix.otp == '27' }}
+        if: ${{ matrix.otp == '28' }}
       - run: rebar3 dialyzer
-        if: ${{ matrix.otp == '27' }}
+        if: ${{ matrix.otp == '28' }}
       - run: rebar3 as test codecov analyze
-        if: ${{ matrix.otp == '27' }}
-      - run: rebar3 as test codecov analyze
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           name: Upload coverage reports to Codecov
           token: ${{ secrets.CODECOV_TOKEN }}
