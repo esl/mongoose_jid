@@ -21,3 +21,4 @@ rebar3.crashdump
 *.vim
 priv/
 tags
+doc/

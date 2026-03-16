@@ -9,3 +9,11 @@
 An XMPP library for parsing JIDs, fully compliant with [RFC6122](https://datatracker.ietf.org/doc/html/rfc6122)
 
 It offers functionality for parsing jids and turning them into jid records, normalising their parts or skipping normalisation when the input is trusted, and also to build binaries for the jid representation. It is highly performant and widely documented.
+
+### Releasing to Hex.pm
+
+Creating a GitHub release (non-draft, non-prerelease) automatically publishes the package to [Hex.pm](https://hex.pm/) via the **Publish to Hex** workflow.
+This workflow can also be triggered manually from the Actions tab — make sure to run it from the specific tag you want to publish.
+
+To revert a published version, run the **Revert published version from Hex** workflow from the Actions tab, providing the version to revert.
+Hex.pm only allows reverting within 1 hour of publishing — after that, the version can only be *retired*.
