@@ -14,7 +14,7 @@ jobs:
     name: OTP ${{matrix.otp}}
     strategy:
       matrix:
-        otp: ['28', '27', '26']
+        otp: ['29', '28', '27']
         rebar3: ['3.27.0']
     runs-on: 'ubuntu-24.04'
     steps:
@@ -26,9 +26,9 @@ jobs:
       - run: rebar3 as test compile
       - run: rebar3 ct
       - run: rebar3 ex_doc
-        if: ${{ matrix.otp == '28' }}
+        if: ${{ matrix.otp == '29' }}
       - run: rebar3 dialyzer
-        if: ${{ matrix.otp == '28' }}
+        if: ${{ matrix.otp == '29' }}
       - run: rebar3 as test codecov analyze
       - uses: codecov/codecov-action@v5
         with:
